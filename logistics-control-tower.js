@@ -548,6 +548,10 @@ function buildLayers(state, config) {
         outlineColor: [0, 0, 0, 255],
         fontSettings: { sdf: true, fontSize: 48 },
         getPixelOffset: [0, 0],
+        parameters: {
+          depthCompare: 'always',
+          depthWriteEnabled: false,
+        },
       }));
     }
   }
