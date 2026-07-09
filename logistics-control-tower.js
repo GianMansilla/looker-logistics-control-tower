@@ -526,11 +526,23 @@ function buildLayers(state, config) {
     // 3. Country labels
     if (cfg.show_country_labels !== false) {
       const popThreshold = (cfg.label_pop_threshold || 20) * 1e6;
+      // Camera center on the globe
+      const camLon = (state.viewState && state.viewState.longitude) || 0;
+      const camLat = (state.viewState && state.viewState.latitude)  || 0;
+      // Angular distance in degrees between (lon1,lat1) and (lon2,lat2)
+      const angDist = (lon1, lat1, lon2, lat2) => {
+        const toRad = Math.PI / 180;
+        const dLat = (lat2 - lat1) * toRad;
+        const dLon = (lon2 - lon1) * toRad;
+        const a = Math.sin(dLat/2)**2 + Math.cos(lat1*toRad)*Math.cos(lat2*toRad)*Math.sin(dLon/2)**2;
+        return 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)) * 180 / Math.PI;
+      };
+      // Keep labels only for countries in the front-facing hemisphere (< 85° from camera)
       const labelFeatures = COUNTRIES_GEOJSON.features.filter(f => {
         const p = f.properties || {};
-        return p.POP_EST > popThreshold &&
-               typeof p.LABEL_X === "number" &&
-               typeof p.LABEL_Y === "number";
+        if (!(p.POP_EST > popThreshold)) return false;
+        if (typeof p.LABEL_X !== "number" || typeof p.LABEL_Y !== "number") return false;
+        return angDist(camLon, camLat, p.LABEL_X, p.LABEL_Y) < 85;
       });
       layers.push(new deck.TextLayer({
         id: 'lct-country-labels',
